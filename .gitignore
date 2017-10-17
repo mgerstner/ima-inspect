@@ -30,3 +30,19 @@
 *.exe
 *.out
 *.app
+
+# autotools
+Makefile.in
+aclocal.m4
+configure
+depcomp
+install-sh
+missing
+autom4te.cache
+Makefile
+config.log
+config.status
+.deps
+.dirstamp
+
+ima_inspect
