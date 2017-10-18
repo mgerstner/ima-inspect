@@ -63,7 +63,27 @@ class UsageError :
 {
 public:
 	explicit UsageError(const std::string &error) :
-		m_error(error)
+		m_error(std::string("UsageError: ") + error)
+	{}
+
+	const char *what() const throw() override
+	{
+		return m_error.c_str();
+	}
+protected:
+	std::string m_error;
+};
+
+/**
+ * \brief
+ * 	Exception for unexpected program states
+ **/
+class RuntimeError :
+	public std::exception
+{
+public:
+	explicit RuntimeError(const std::string &error) :
+		m_error(std::string("RuntimeError: ") + error)
 	{}
 
 	const char *what() const throw() override
