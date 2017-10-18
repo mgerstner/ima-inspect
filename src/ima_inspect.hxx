@@ -34,12 +34,42 @@ protected: // functions
 	void inspectAttr() const;
 
 	void inspectDigsig() const;
+	void inspectDigsigV1() const;
+	void inspectDigsigV2() const;
+
+	void inspectDigest() const;
+	void inspectDigestNg() const;
+
+	void inspectHmac() const;
+
+	/*
+	 * bit fiddling functions
+	 */
+
+	const char* nextData() const {
+		const auto parse_pos = m_attr_data.size() - m_attr_data_left;
+		return & m_attr_data.at(parse_pos);
+	}
+
+	void recordDataConsumed(const size_t bytes) const
+	{
+		m_attr_data_left -= bytes;
+	}
+
+	const char* fetchNextData(const size_t bytes, const char *item) const;
+
+	template<typename T>
+	void fetchNextType(T*& out_ptr, const char *label) const;
+
+	void assertDataLeft(const size_t bytes, const char *purpose) const;
 
 protected: // data
 
 	int m_res = 0;
 	//! holds the currently handled xattr value
 	std::vector<char> m_attr_data;
+	//! how much bytes are left unprocessed in the current m_attr_data
+	mutable size_t m_attr_data_left = 0;
 
 	// the xattr names to inspect per file
 	static const std::array<std::string, 2> m_attr_names;
