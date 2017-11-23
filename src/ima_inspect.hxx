@@ -9,6 +9,8 @@
 
 // C++
 #include <array>
+#include <iostream>
+#include <fstream>
 
 // third-party
 #include <tclap/CmdLine.h>
@@ -66,9 +68,13 @@ protected: // functions
 	//! returns whether we should skip display of the given attribute
 	bool skipAttr(const std::string &attr);
 
+	void setupNullOut();
+
+	std::ostream& getOutstream() const { return *m_outstream; }
+
 protected: // data
 
-	int m_res = 0;
+	mutable int m_res = 0;
 	//! holds the currently handled xattr value
 	std::vector<char> m_attr_data;
 	//! how much bytes are left unprocessed in the current m_attr_data
@@ -76,6 +82,11 @@ protected: // data
 
 	// the xattr names to inspect per file
 	static const std::array<std::string, 2> m_attr_names;
+
+	//! where regular messages should be written to
+	mutable std::ostream *m_outstream = nullptr;
+	//! an output stream ending up in /dev/null
+	std::fstream m_null_dev;
 
 	// command line parsing
 	TCLAP::CmdLine m_cmdline;

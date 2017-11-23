@@ -95,6 +95,7 @@ ImaInspect::ImaInspect() :
 		m_cmdline
 	)
 {
+	m_outstream = &std::cout;
 }
 
 void ImaInspect::parseArgs(const int argc, const char **argv)
@@ -117,12 +118,14 @@ void ImaInspect::run()
 {
 	bool first = true;
 
+	auto &out = getOutstream();
+
 	for( const auto &file: m_arg_files.getValue() )
 	{
 		try
 		{
-			if( first ) first = false; else std::cout << "\n";
-			std::cout << file << "\n";
+			if( first ) first = false; else out << "\n";
+			out << file << "\n";
 			inspectFile(file);
 		}
 		catch( const std::exception &ex )
@@ -142,6 +145,8 @@ void ImaInspect::inspectFile(const std::string &path)
 		throw SysError("open");
 	}
 
+	auto &out = getOutstream();
+
 	for( const auto &attr: m_attr_names )
 	{
 		if( skipAttr(attr) )
@@ -149,9 +154,9 @@ void ImaInspect::inspectFile(const std::string &path)
 
 		try
 		{
-			std::cout << "\n";
-			std::cout << attr << "\n";
-			std::cout << std::string(attr.size(), '-') << "\n";
+			out << "\n";
+			out << attr << "\n";
+			out << std::string(attr.size(), '-') << "\n";
 			bool have_attr = getAttr(fd, attr);
 
 			if( !have_attr )
@@ -175,6 +180,8 @@ bool ImaInspect::getAttr(int fd, const std::string &attr)
 	m_attr_data.clear();
 	int res = -1;
 
+	auto &out = getOutstream();
+
 	while( true )
 	{
 		res = fgetxattr(
@@ -194,7 +201,7 @@ bool ImaInspect::getAttr(int fd, const std::string &attr)
 			}
 			else if( errno == ENOATTR )
 			{
-				std::cout << "no such attribute\n";
+				out << "no such attribute\n";
 				// no attribute
 				return false;
 			}
@@ -249,6 +256,12 @@ bool ImaInspect::skipAttr(const std::string &attr)
 	return attr.find(m_arg_attr.getValue()) == attr.npos;
 }
 
+void ImaInspect::setupNullOut()
+{
+	m_null_dev.open("/dev/null");
+	m_outstream = &m_null_dev;
+}
+
 template<typename T>
 void ImaInspect::fetchNextType(T*& out_ptr, const char *label) const
 {
@@ -278,7 +291,7 @@ void ImaInspect::inspectAttr() const
 		inspectDigsig();
 		break;
 	default:
-		std::cout << "unknown IMA/EVM attribute tagged with "
+		std::cerr << "unknown IMA/EVM attribute tagged with "
 			<< static_cast<int>(type) << std::endl;
 		break;
 	}
@@ -292,7 +305,9 @@ void ImaInspect::inspectDigsig() const
 	assertDataLeft(1, "digsig version");
 	uint8_t digsig_version = static_cast<uint8_t>(*nextData());
 
-	std::cout << "digital signature version " << (unsigned)digsig_version
+	auto &out = getOutstream();
+
+	out << "digital signature version " << (unsigned)digsig_version
 		<< "\n";
 
 	switch(digsig_version)
@@ -313,7 +328,8 @@ void ImaInspect::inspectDigsig() const
 		inspectDigsigV2();
 		break;
 	default:
-		std::cout << "unknown digital signature version encountered\n";
+		std::cerr << "unknown digital signature version encountered\n";
+		m_res = 2;
 		break;
 	}
 }
@@ -323,39 +339,41 @@ void ImaInspect::inspectDigsigV1() const
 	const struct signature_hdr* header;
 	fetchNextType(header, "signature_hdr");
 
+	auto &out = getOutstream();
+
 	time_t ts = static_cast<time_t>(header->timestamp);
 	// NOTE: ctime() seems to include a newline already
-	std::cout << "creation time: " << ::ctime(&ts);
+	out << "creation time: " << ::ctime(&ts);
 	auto sig_algo = static_cast<pubkey_algo>(header->algo);
-	std::cout << "signature algorithm: "
+	out << "signature algorithm: "
 		<< getSignAlgoLabel(sig_algo) << "\n";
 	auto dig_algo = static_cast<digest_algo>(header->hash);
-	std::cout << "digest algorithm: "
+	out << "digest algorithm: "
 		<< getDigestAlgoLabel(dig_algo) << "\n";
 	// these are bytes 12 - 19 of the sha1 digest of the binary public key
 	// used
 	// TODO: does this need to be displayed in big-endian?
 	// see calc_keyid_v1() from libimaevm.c
-	std::cout << "key-id v1 (gpg compatible): "
+	out << "key-id v1 (gpg compatible): "
 		<< HexDumpData(header->keyid, sizeof(header->keyid)) << "\n";
 	// the kernel digsig code was taken from the GMP library, thus the
 	// nomenclature
 	// also see kernel Documentation/digsig.txt
-	std::cout << "nmpi (number of multi-precision-integers): "
+	out << "nmpi (number of multi-precision-integers): "
 		<< (size_t)header->nmpi << "\n";
 
 	// following is a header containing the length of the signature in bits
 	const uint16_t *mpi_length_be;
 	fetchNextType(mpi_length_be, "mpi_length");
 	const auto mpi_length_host = ntohs(*mpi_length_be);
-	std::cout << "signature length: " << mpi_length_host << " bits\n";
+	out << "signature length: " << mpi_length_host << " bits\n";
 
 	// shift by 3 (div by 8) gives us the bytes unit again
 	const auto mpi_length_bytes = mpi_length_host >> 3;
 	const uint8_t *mpi_sig = reinterpret_cast<const uint8_t*>(
 		fetchNextData(mpi_length_bytes, "mpi_sig")
 	);
-	std::cout << "signature data:\n\n"
+	out << "signature data:\n\n"
 		<< HexDumpData(mpi_sig, mpi_length_bytes) << "\n";
 }
 
@@ -364,10 +382,11 @@ void ImaInspect::inspectDigsigV2() const
 	const struct signature_v2_hdr* header;
 	fetchNextType(header, "signature_v2_hdr");
 	auto hash_algo = static_cast<pkey_hash_algo>(header->hash_algo);
-	std::cout << "digest algorithm: " << getHashAlgoLabel(hash_algo) << "\n";
+	auto &out = getOutstream();
+	out << "digest algorithm: " << getHashAlgoLabel(hash_algo) << "\n";
 	// for V2 the keyid is only 4 bytes long for some reason
 	// TODO: does this need to be displayed in big-endian?
-	std::cout << "key-id v2 (gpg compatible): "
+	out << "key-id v2 (gpg compatible): "
 		<< HexDumpData(
 			reinterpret_cast<const uint8_t*>(&header->keyid),
 			sizeof(header->keyid)
@@ -376,52 +395,55 @@ void ImaInspect::inspectDigsigV2() const
 
 	const auto sig_size_bytes = ntohs(header->sig_size);
 	const auto sig_size_bits = sig_size_bytes << 3;
-	std::cout << "signature length: " << sig_size_bits << " bits\n";
+	out << "signature length: " << sig_size_bits << " bits\n";
 
 	const uint8_t *sig_data = reinterpret_cast<const uint8_t*>(
 		fetchNextData(sig_size_bytes, "sig")
 	);
-	std::cout << "signature data:\n\n"
+	out << "signature data:\n\n"
 		<< HexDumpData(sig_data, sig_size_bytes) << "\n";
 }
 
 void ImaInspect::inspectDigest() const
 {
-	std::cout << "digest (legacy sha1)" << "\n";
+	auto &out = getOutstream();
+	out << "digest (legacy sha1)" << "\n";
 	const auto digest_len = m_attr_data_left;
-	std::cout << "digest length: " << digest_len << " bytes\n";
+	out << "digest length: " << digest_len << " bytes\n";
 	const uint8_t *digest = reinterpret_cast<const uint8_t*>(
 		fetchNextData(digest_len, "digest")
 	);
-	std::cout << "digest: " << HexDumpData(digest, digest_len) << "\n";
+	out << "digest: " << HexDumpData(digest, digest_len) << "\n";
 }
 
 void ImaInspect::inspectDigestNg() const
 {
-	std::cout << "digest (NG)" << "\n";
+	auto &out = getOutstream();
+	out << "digest (NG)" << "\n";
 	const uint8_t *algo;
 	fetchNextType(algo, "digest-ng algo");
 	const auto algo_enum = static_cast<enum pkey_hash_algo>(*algo);
-	std::cout << "digest algorithm: " << getHashAlgoLabel(algo_enum) << "\n";
+	out << "digest algorithm: " << getHashAlgoLabel(algo_enum) << "\n";
 	const auto digest_len = m_attr_data_left;
-	std::cout << "digest length: " << m_attr_data_left << " bytes\n";
+	out << "digest length: " << m_attr_data_left << " bytes\n";
 	const uint8_t *digest = reinterpret_cast<const uint8_t*>(
 		fetchNextData(digest_len, "digest")
 	);
-	std::cout << "digest: " << HexDumpData(digest, digest_len) << "\n";
+	out << "digest: " << HexDumpData(digest, digest_len) << "\n";
 }
 
 void ImaInspect::inspectHmac() const
 {
+	auto &out = getOutstream();
 	// The EVM HMAC seems still to be fixed at SHA1?
-	std::cout << "EVM HMAC\n";
-	std::cout << "digest algo: sha1 (fixed)\n";
+	out << "EVM HMAC\n";
+	out << "digest algo: sha1 (fixed)\n";
 	const auto digest_len = m_attr_data_left;
-	std::cout << "digest length: " << digest_len << " bytes\n";
+	out << "digest length: " << digest_len << " bytes\n";
 	const uint8_t *digest = reinterpret_cast<const uint8_t*>(
 		fetchNextData(digest_len, "digest")
 	);
-	std::cout << "digest: " << HexDumpData(digest, digest_len) << "\n";
+	out << "digest: " << HexDumpData(digest, digest_len) << "\n";
 }
 
 int main(const int argc, const char **argv)
