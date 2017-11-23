@@ -63,6 +63,9 @@ protected: // functions
 
 	void assertDataLeft(const size_t bytes, const char *purpose) const;
 
+	//! returns whether we should skip display of the given attribute
+	bool skipAttr(const std::string &attr);
+
 protected: // data
 
 	int m_res = 0;
@@ -76,6 +79,7 @@ protected: // data
 
 	// command line parsing
 	TCLAP::CmdLine m_cmdline;
+	TCLAP::ValueArg<std::string> m_arg_attr;
 	TCLAP::UnlabeledMultiArg<std::string> m_arg_files;
 };
 

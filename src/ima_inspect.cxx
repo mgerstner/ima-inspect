@@ -82,15 +82,35 @@ const std::array<std::string, 2> ImaInspect::m_attr_names = {
 ImaInspect::ImaInspect() :
 	m_cmdline("This utility allows to display security.ima and "
 		"security.evm extended attributes created by the "
-		"'evmctl' utility from ima-evm-utils."),
+		"'evmctl' utility from ima-evm-utils."
+	),
+	m_arg_attr("a", "attr",
+		"Type of attribute to inspect. By default all attributes are displayed",
+		false,
+		"",
+		"[security.]ima, [security.]evm",
+		m_cmdline
+	),
 	m_arg_files("files", "one or more files to inspect", true, "path",
-		m_cmdline)
+		m_cmdline
+	)
 {
 }
 
 void ImaInspect::parseArgs(const int argc, const char **argv)
 {
 	m_cmdline.parse(argc, argv);
+
+	if( m_arg_attr.isSet() )
+	{
+		const auto &attr = m_arg_attr.getValue();
+
+		if( attr.find("ima") == attr.npos &&
+			attr.find("evm") == attr.npos )
+		{
+			throw UsageError("ambiguous or invalid value for --attr encountered");
+		}
+	}
 }
 
 void ImaInspect::run()
@@ -124,6 +144,9 @@ void ImaInspect::inspectFile(const std::string &path)
 
 	for( const auto &attr: m_attr_names )
 	{
+		if( skipAttr(attr) )
+			continue;
+
 		try
 		{
 			std::cout << "\n";
@@ -213,6 +236,17 @@ void ImaInspect::assertDataLeft(const size_t bytes, const char *purpose) const
 		ss << "premature end of attribute data (" << purpose << ")\n";
 		throw RuntimeError(ss.str());
 	}
+}
+
+bool ImaInspect::skipAttr(const std::string &attr)
+{
+	if( !m_arg_attr.isSet() )
+	{
+		return false;
+	}
+
+	// support any substring as argument for simplicity
+	return attr.find(m_arg_attr.getValue()) == attr.npos;
 }
 
 template<typename T>
