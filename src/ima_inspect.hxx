@@ -70,7 +70,14 @@ protected: // functions
 
 	void setupNullOut();
 
+	//! returns the output stream for human readable output
 	std::ostream& getOutstream() const { return *m_outstream; }
+
+	/**
+	 * \brief
+	 * 	Dumps the given data area according to m_arg_output
+	 **/
+	void dumpData(const uint8_t *p, const size_t bytes) const;
 
 protected: // data
 
@@ -87,10 +94,13 @@ protected: // data
 	mutable std::ostream *m_outstream = nullptr;
 	//! an output stream ending up in /dev/null
 	std::fstream m_null_dev;
+	//! cached converted value for m_arg_output
+	bool m_dump_as_binary = false;
 
 	// command line parsing
 	TCLAP::CmdLine m_cmdline;
 	TCLAP::ValueArg<std::string> m_arg_attr;
+	TCLAP::ValueArg<std::string> m_arg_output;
 	TCLAP::UnlabeledMultiArg<std::string> m_arg_files;
 };
 
