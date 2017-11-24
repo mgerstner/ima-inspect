@@ -21,9 +21,24 @@ data stored in the extended attributes.
 ## Usage
 
 Simply pass the files you want to inspect to the program `ima_inspect`. There
-is currently no support for recursive listing and there are no behavioural 
-switches.
+is currently no support for recursive listing at the moment.
 
+You can limit the output to only the `security.evm` or `security.ima`
+attribute by specifying the command line switch `-a ima` or `-a evm`,
+respectively.
+
+You can extract the plain cryptographic primitive from the attribute by
+specifying both `-a` and `--out <hex, bin>`. The cryptographic primitive is
+the plain signature, digest or HMAC depending on the subtype of the attribute.
+With this you can for example verify IMA signatures from userspace like this:
+
+```
+$ ima_inspect some_file -o bin -a ima >ima_signature.bin
+$ openssl dgst -sha256 -verify ima_public.pem -keyform PEM -signature ./ima_signature.bin some_file
+```
+
+Remember that the digest algorithm and public key must match the ones used in
+the `security.ima` attribute.
 
 ## Building
 
