@@ -85,14 +85,14 @@ ImaInspect::ImaInspect() :
 		"'evmctl' utility from ima-evm-utils."
 	),
 	m_arg_attr("a", "attr",
-		"Type of attribute to inspect. By default all attributes are displayed",
+		"Type of attribute to inspect. By default all attributes are displayed.",
 		false,
 		"",
 		"[security.]ima, [security.]evm",
 		m_cmdline
 	),
 	m_arg_output("o", "out",
-		"Instead if displaying the attribute selected via -a, output "
+		"Instead of displaying the attribute selected via -a, output "
 		"just the cryptographic primitive in the given format to "
 		"stdout. This data contains just the signature, HMAC or "
 		"digest data, depending on the attribute content.",
@@ -101,7 +101,7 @@ ImaInspect::ImaInspect() :
 		"hex, bin",
 		m_cmdline
 	),
-	m_arg_files("files", "one or more files to inspect", true, "path",
+	m_arg_files("files", "One or more files to inspect.", true, "path",
 		m_cmdline
 	)
 {
