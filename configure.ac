@@ -1,5 +1,5 @@
 AC_INIT([ima-inspect],
-	[0.10],
+	[0.11],
 	[https://github.com/mgerstner/ima-inspect/issues],
 	[],
 	[https://github.com/mgerstner/ima-inspect])

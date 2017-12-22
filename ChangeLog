@@ -1,3 +1,11 @@
+2017-12-22 Matthias Gerstner <matthias.gerstner@suse.com>
+
+	version 0.11
+
+	- support limitation to specific attribute types via `-a` switch
+	- support for outputting the cryptographic primitive like digest,
+	  signature or HMAC as hex or binary data
+
 2017-10-18 Matthias Gerstner <matthias.gerstner@suse.com>
 
 	version 0.10
