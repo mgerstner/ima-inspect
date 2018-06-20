@@ -502,7 +502,7 @@ void ImaInspect::inspectDigestNg() const
 
 	out << "digest (NG)" << "\n";
 	out << "digest algorithm: " << getHashAlgoLabel(algo_enum) << "\n";
-	out << "digest length: " << m_attr_data_left << " bytes\n";
+	out << "digest length: " << digest_len << " bytes\n";
 	out << "digest: " << HexDumpData(digest, digest_len) << "\n";
 }
 
