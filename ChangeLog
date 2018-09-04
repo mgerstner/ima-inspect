@@ -1,3 +1,10 @@
+2018-09-04 Matthias Gerstner <matthias.gerstner@suse.com>
+
+	version 0.12
+
+	- use glibc-devel sys/xattr.h header instead of attr/xattr.h header
+	  from the attr package. The latter was removed upstream.
+
 2017-12-22 Matthias Gerstner <matthias.gerstner@suse.com>
 
 	version 0.11
