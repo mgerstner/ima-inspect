@@ -14,8 +14,9 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <unistd.h>
-// contains a few more preprocessor defines than sys/xattr.h
-#include <attr/xattr.h>
+// there was also attr/xattr.h from the attr package, but it's been dropped in
+// favor of the glibc one here
+#include <sys/xattr.h>
 #include <time.h>
 #include <stddef.h>
 #include <arpa/inet.h>
@@ -233,7 +234,7 @@ bool ImaInspect::getAttr(int fd, const std::string &attr)
 				m_attr_data.clear();
 				continue;
 			}
-			else if( errno == ENOATTR )
+			else if( errno == ENODATA )
 			{
 				out << "no such attribute\n";
 				// no attribute
