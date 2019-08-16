@@ -1,3 +1,11 @@
+2019-08-16 Matthias Gerstner <matthias.gerstner@suse.com>
+
+	version 0.13
+
+	- lookup different symbol in libimaevm configure check, do_dump has
+	  been renamed in libimaevm 1.2.
+
+
 2018-09-04 Matthias Gerstner <matthias.gerstner@suse.com>
 
 	version 0.12
