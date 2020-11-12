@@ -9,6 +9,9 @@
 #include <sstream>
 #include <memory>
 
+// include hash_algo header
+#include <linux/hash_info.h>
+
 // Linux
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -54,21 +57,34 @@ const char* getDigestAlgoLabel(enum digest_algo algo)
 }
 
 // this is the digest enum used for v2 signatures
-const char* getHashAlgoLabel(enum pkey_hash_algo algo)
+const char* getHashAlgoLabel(enum hash_algo algo)
 {
 	// there is actually a translation table in libimaevm.c but it's not
 	// declared in the header...
 
 	switch(algo)
 	{
-	case PKEY_HASH_MD4: return "md4";
-	case PKEY_HASH_MD5: return "md5";
-	case PKEY_HASH_SHA1: return "sha1";
-	case PKEY_HASH_RIPE_MD_160: return "rmd160";
-	case PKEY_HASH_SHA224: return "sha224";
-	case PKEY_HASH_SHA256: return "sha256";
-	case PKEY_HASH_SHA384: return "sha384";
-	case PKEY_HASH_SHA512: return "sha512";
+	// Replace pkey_hash_algo enum by hash_algo
+	case HASH_ALGO_MD4: return "md4";
+	case HASH_ALGO_MD5: return "md5";
+	case HASH_ALGO_SHA1: return "sha1";
+	case HASH_ALGO_RIPE_MD_160: return "rmd160";
+	case HASH_ALGO_SHA256: return "sha256";
+	case HASH_ALGO_SHA384: return "sha384";
+	case HASH_ALGO_SHA512: return "sha512";
+	case HASH_ALGO_SHA224: return "sha224";
+	case HASH_ALGO_RIPE_MD_128: return "rmd128";
+	case HASH_ALGO_RIPE_MD_256: return "rmd256";
+	case HASH_ALGO_RIPE_MD_320: return "rmd320";
+	case HASH_ALGO_WP_256: return "wp256";
+	case HASH_ALGO_WP_384: return "wp384";
+	case HASH_ALGO_WP_512: return "wp512";
+	case HASH_ALGO_TGR_128: return "tgr128";
+	case HASH_ALGO_TGR_160: return "tgr160";
+	case HASH_ALGO_TGR_192: return "tgr192";
+	case HASH_ALGO_SM3_256: return "sm3256";
+	case HASH_ALGO_STREEBOG_256: return "streebog256";
+	case HASH_ALGO_STREEBOG_512: return "streebog512";
 	default: return "unknown/invalid";
 	}
 }
@@ -438,7 +454,7 @@ void ImaInspect::inspectDigsigV2() const
 {
 	const struct signature_v2_hdr* header;
 	fetchNextType(header, "signature_v2_hdr");
-	auto hash_algo = static_cast<pkey_hash_algo>(header->hash_algo);
+	auto hash_algo = static_cast<enum hash_algo>(header->hash_algo);
 	const auto sig_size_bytes = ntohs(header->sig_size);
 	const auto sig_size_bits = sig_size_bytes << 3;
 	const uint8_t *sig_data = reinterpret_cast<const uint8_t*>(
@@ -490,7 +506,7 @@ void ImaInspect::inspectDigestNg() const
 	auto &out = getOutstream();
 	const uint8_t *algo;
 	fetchNextType(algo, "digest-ng algo");
-	const auto algo_enum = static_cast<enum pkey_hash_algo>(*algo);
+	const auto algo_enum = static_cast<enum hash_algo>(*algo);
 	const auto digest_len = m_attr_data_left;
 	const uint8_t *digest = reinterpret_cast<const uint8_t*>(
 		fetchNextData(digest_len, "digest")
@@ -542,4 +558,3 @@ int main(const int argc, const char **argv)
 		return 1;
 	}
 }
-
