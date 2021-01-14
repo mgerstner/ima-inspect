@@ -58,6 +58,10 @@ const char* getHashAlgoLabel(enum pkey_hash_algo algo)
 {
 	// there is actually a translation table in libimaevm.c but it's not
 	// declared in the header...
+	//
+	// this enum is also declared in the kernel header linux/hash_info.h
+	// as `enum hash_algo`. I don't want to introduce a dependency to the
+	// kernel headers, though.
 
 	switch(algo)
 	{
@@ -69,6 +73,18 @@ const char* getHashAlgoLabel(enum pkey_hash_algo algo)
 	case PKEY_HASH_SHA256: return "sha256";
 	case PKEY_HASH_SHA384: return "sha384";
 	case PKEY_HASH_SHA512: return "sha512";
+	case PKEY_HASH_RIPE_MD_128: return "rmd128";
+	case PKEY_HASH_RIPE_MD_256: return "rmd256";
+	case PKEY_HASH_RIPE_MD_320: return "rmd320";
+	case PKEY_HASH_WP_256: return "wp256";
+	case PKEY_HASH_WP_384: return "wp384";
+	case PKEY_HASH_WP_512: return "wp512";
+	case PKEY_HASH_TGR_128: return "tgr128";
+	case PKEY_HASH_TGR_160: return "tgr160";
+	case PKEY_HASH_TGR_192: return "tgr192";
+	case PKEY_HASH_SM3_256: return "sm3-256";
+	case PKEY_HASH_STREEBOG_256: return "streebog256";
+	case PKEY_HASH_STREEBOG_512: return "streebog512";
 	default: return "unknown/invalid";
 	}
 }
