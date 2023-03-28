@@ -8,6 +8,9 @@
 #define IMA_HELPERS_HXX
 
 // C++
+#include <stdint.h>
+
+// C++
 #include <iosfwd>
 
 //! helper type for producing hex dumps of arbitrary binary data
